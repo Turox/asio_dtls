@@ -6,12 +6,14 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #ifdef ASIO_DTLS_USE_BOOST
+
 #include <boost/asio/detail/config.hpp>
 
 #include "asio/ssl/dtls/error_code.hpp"
 #include <boost/asio/steady_timer.hpp>
 
 #include <boost/asio/detail/push_options.hpp>
+
 #else  // ASIO_DTLS_USE_BOOST
 #include "asio/detail/config.hpp"
 
@@ -20,197 +22,176 @@
 
 #include "asio/detail/push_options.hpp"
 #endif // ASIO_DTLS_USE_BOOST
+
 #include <functional>
 
 #ifdef ASIO_DTLS_USE_BOOST
 namespace boost {
 #endif // ASIO_DTLS_USE_BOOST
 
-namespace asio{
-namespace ssl{
-namespace dtls {
-namespace detail {
+    namespace asio {
+        namespace ssl {
+            namespace dtls {
+                namespace detail {
 
-template <typename SocketType>
-class datagram_send_to
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class datagram_send_to {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  datagram_send_to(SocketType &socket,
-                   typename SocketType::endpoint_type ep,
-                   message_flags flags = message_flags())
-    : socket_(socket)
-    , endpoint_(ep)
-    , flags_(flags)
-  {
+                        datagram_send_to(SocketType &socket,
+                                         typename SocketType::endpoint_type ep,
+                                         message_flags flags = message_flags())
+                                : socket_(socket), endpoint_(ep), flags_(flags) {
 
-  }
+                        }
 
-  template <typename Buffer>
-  size_t operator()(const Buffer& buffer, asio::error_code& ec) const
-  {
-    return socket_.send_to(buffer, endpoint_, flags_, ec);
-  }
+                        template<typename Buffer>
+                        size_t operator()(const Buffer &buffer, asio::error_code &ec) const {
+                            return socket_.send_to(buffer, endpoint_, flags_, ec);
+                        }
 
-private:
-  SocketType& socket_;
-  typename SocketType::endpoint_type endpoint_;
-  typename SocketType::message_flags flags_;
-};
+                    private:
+                        SocketType &socket_;
+                        typename SocketType::endpoint_type endpoint_;
+                        typename SocketType::message_flags flags_;
+                    };
 
-template <typename SocketType>
-class datagram_send
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class datagram_send {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  datagram_send(SocketType &socket, message_flags flags = message_flags())
-    : socket_(socket)
-    , flags_(flags)
-  {
+                        datagram_send(SocketType &socket, message_flags flags = message_flags())
+                                : socket_(socket), flags_(flags) {
 
-  }
+                        }
 
-  template <typename Buffer>
-  size_t operator()(const Buffer& buffer, asio::error_code& ec) const
-  {
-    return socket_.send(buffer, flags_, ec);
-  }
+                        template<typename Buffer>
+                        size_t operator()(const Buffer &buffer, asio::error_code &ec) const {
+                            return socket_.send(buffer, flags_, ec);
+                        }
 
-private:
-  SocketType& socket_;
-  message_flags flags_;
-};
+                    private:
+                        SocketType &socket_;
+                        message_flags flags_;
+                    };
 
-template <typename SocketType>
-class datagram_receive
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class datagram_receive {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  datagram_receive(SocketType &socket)
-    : socket_(socket)
-  {
+                        datagram_receive(SocketType &socket)
+                                : socket_(socket) {
 
-  }
+                        }
 
-  template <typename Buffer>
-  size_t operator()(const Buffer& buffer, asio::error_code& ec) const
-  {
-    return socket_.receive(buffer, message_flags(), ec);
-  }
+                        template<typename Buffer>
+                        size_t operator()(const Buffer &buffer, asio::error_code &ec) const {
+                            return socket_.receive(buffer, message_flags(), ec);
+                        }
 
-private:
-  SocketType& socket_;
-};
+                    private:
+                        SocketType &socket_;
+                    };
 
-template <typename SocketType>
-class async_datagram_receive
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class async_datagram_receive {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  async_datagram_receive(SocketType& socket)
-    : socket_(socket)
-  {
+                        async_datagram_receive(SocketType &socket)
+                                : socket_(socket) {
 
-  }
+                        }
 
-  template <typename Buffer, typename CallBack>
-  void operator()(const Buffer& buffer, ASIO_DTLS_MOVE_ARG(CallBack) cb) const
-  {
-    socket_.async_receive(buffer, message_flags(), ASIO_DTLS_MOVE_CAST(CallBack)(cb));
-  }
+                        template<typename Buffer, typename CallBack>
+                        void operator()(const Buffer &buffer, ASIO_DTLS_MOVE_ARG(CallBack)cb) const {
+                            socket_.async_receive(buffer, message_flags(), ASIO_DTLS_MOVE_CAST(CallBack)(cb));
+                        }
 
-private:
-  SocketType& socket_;
-};
+                    private:
+                        SocketType &socket_;
+                    };
 
-template <typename SocketType>
-class async_datagram_receive_timeout
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class async_datagram_receive_timeout {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  async_datagram_receive_timeout(SocketType& socket)
-    : socket_(socket)
-    , timer_(socket.get_executor())
-    , timeout_(new asio::steady_timer::duration(chrono::seconds(1)))
-  {
-    timer_.expires_after(asio::steady_timer::duration::max());
-  }
+                        async_datagram_receive_timeout(SocketType &socket)
+                                : socket_(socket),
+                                  timer_(std::make_shared<asio::steady_timer>(socket.get_executor(),
+                                                                              asio::steady_timer::duration::max())) {
+                        }
 
-  async_datagram_receive_timeout(const async_datagram_receive_timeout& other)
-      : socket_(other.socket_)
-      , timer_(socket_.get_executor())
-      , timeout_(other.timeout_)
-  {
-      timer_.expires_after(asio::steady_timer::duration::max());
-  }
+                        async_datagram_receive_timeout(const async_datagram_receive_timeout &other)
+                                : socket_(other.socket_),
+                                  timer_(std::make_shared<asio::steady_timer>(socket_.get_executor(),
+                                                                              asio::steady_timer::duration::max())) {
+                        }
 
-  template <typename Buffer, typename CallBack>
-  void operator()(const Buffer& buffer, ASIO_DTLS_MOVE_ARG(CallBack) cb)
-  {
-    socket_.async_receive(buffer, message_flags(),
-                          ASIO_DTLS_MOVE_CAST(CallBack)(cb));
+                        template<typename Buffer, typename CallBack>
+                        void operator()(const Buffer &buffer, ASIO_DTLS_MOVE_ARG(CallBack)cb) {
+                            socket_.async_receive(buffer, message_flags(),
+                                                  [cb = ASIO_DTLS_MOVE_CAST(CallBack)(cb), timer = timer_](
+                                                          asio::error_code ec,
+                                                          std::size_t bytes_transferred
+                                                  ) mutable {
+                                                      timer->cancel();
+                                                      cb(ec, bytes_transferred);
+                                                  });
 
-    SocketType &socket = socket_;
-    timer_.async_wait([&socket](const asio::error_code &ec)
-    {
-        if(!ec)
-        {
-            socket.close();
-        }
-    });
+                            SocketType &socket = socket_;
+                            timer_->expires_after(chrono::seconds(1));
+                            timer_->async_wait([&socket](const asio::error_code &ec) {
+                                if (!ec) {
+                                    socket.close();
+                                }
+                            });
 
-    timer_.expires_after(*timeout_);
-  }
+                        }
 
-private:
-  SocketType& socket_;
-  asio::steady_timer timer_;
-  asio::detail::shared_ptr<asio::steady_timer::duration > timeout_;
-};
+                    private:
+                        SocketType &socket_;
+                        asio::detail::shared_ptr<asio::steady_timer> timer_;
+                    };
 
-template <typename SocketType>
-class async_datagram_send
-{
-public:
-  typedef typename SocketType::message_flags message_flags;
+                    template<typename SocketType>
+                    class async_datagram_send {
+                    public:
+                        typedef typename SocketType::message_flags message_flags;
 
-  async_datagram_send(SocketType& socket, message_flags flags = message_flags())
-    : socket_(socket)
-    , flags_(flags)
-  {
+                        async_datagram_send(SocketType &socket, message_flags flags = message_flags())
+                                : socket_(socket), flags_(flags) {
 
-  }
+                        }
 
-  template <typename Buffer, typename CallBack>
-  void operator()(const Buffer& buffer, ASIO_DTLS_MOVE_ARG(CallBack) cb) const
-  {
-    socket_.async_send(buffer, flags_, ASIO_DTLS_MOVE_CAST(CallBack)(cb));
-  }
+                        template<typename Buffer, typename CallBack>
+                        void operator()(const Buffer &buffer, ASIO_DTLS_MOVE_ARG(CallBack)cb) const {
+                            socket_.async_send(buffer, flags_, ASIO_DTLS_MOVE_CAST(CallBack)(cb));
+                        }
 
-private:
-  SocketType& socket_;
-  message_flags flags_;
-};
+                    private:
+                        SocketType &socket_;
+                        message_flags flags_;
+                    };
 
 
-
-
-} // namespace detail
-} // namespace dtls
-} // namespace ssl
-} // namespace asio
+                } // namespace detail
+            } // namespace dtls
+        } // namespace ssl
+    } // namespace asio
 
 #if ASIO_DTLS_USE_BOOST
 } // namespace boost
 #endif // ASIO_DTLS_USE_BOOST
 
 #ifdef ASIO_DTLS_USE_BOOST
+
 #include <boost/asio/detail/pop_options.hpp>
+
 #else  // ASIO_DTLS_USE_BOOST
 #include "asio/detail/pop_options.hpp"
 #endif // ASIO_DTLS_USE_BOOST
